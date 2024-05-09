@@ -1,0 +1,12 @@
+.DS_Store
+.idea/
+.env
+.vscode/
+.volumes/
+
+# Binaries
+/insider
+
+# Air
+tmp/
+c.out

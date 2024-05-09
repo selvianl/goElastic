@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  es:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.3
+    container_name: elastic
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.authc.api_key.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - elastic_data:/usr/share/elasticsearch/data
+    restart: on-failure
+
+  myapp:
+    build: .
+    container_name: myapp
+    ports:
+      - "8092:8092"
+    depends_on:
+      - db
+      - es
+    env_file:
+      - ./.env
+    restart: on-failure
+    # command: sh -c "sleep 20"
+
+  db:
+    image: postgres:13-alpine
+    container_name: db
+    volumes:
+      - .volumes/postgres:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    env_file:
+      - ./.env
+    restart: on-failure
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.3
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    depends_on:
+      - es
+    restart: on-failure
+
+volumes:
+  elastic_data:
+
+networks:
+  default:
+    driver: bridge

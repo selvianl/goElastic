@@ -1,0 +1,222 @@
+definitions:
+  api.PaginatedResponse:
+    properties:
+      count:
+        type: integer
+      results: {}
+    type: object
+  models.ConfigInput:
+    properties:
+      is_active:
+        type: boolean
+      sort_option:
+        type: string
+      sort_order:
+        type: string
+    required:
+    - sort_option
+    - sort_order
+    type: object
+  models.ConfigInputUpdate:
+    properties:
+      is_active:
+        type: boolean
+      sort_option:
+        type: string
+      sort_order:
+        type: string
+    type: object
+  models.FilterCondition:
+    properties:
+      field_name:
+        type: string
+      operation:
+        type: string
+      value:
+        type: string
+    type: object
+  models.FilterParams:
+    properties:
+      conditions:
+        items:
+          $ref: '#/definitions/models.FilterCondition'
+        type: array
+    type: object
+  models.ItemOutput:
+    properties:
+      click:
+        type: integer
+      item_id:
+        type: string
+      locale:
+        type: string
+      name:
+        type: string
+      purchase:
+        type: integer
+    type: object
+  models.SortConfig:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      sort_option:
+        type: string
+      sort_order:
+        type: string
+      updated_at:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /configs:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: pagination limit
+        in: query
+        name: limit
+        type: string
+      - description: active page
+        in: query
+        name: page
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.PaginatedResponse'
+            - properties:
+                ' count':
+                  type: integer
+                Results:
+                  items:
+                    $ref: '#/definitions/models.SortConfig'
+                  type: array
+              type: object
+      summary: List configs
+      tags:
+      - configs
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Create Config
+        in: body
+        name: applicant
+        required: true
+        schema:
+          $ref: '#/definitions/models.ConfigInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.SortConfig'
+      summary: Create config
+      tags:
+      - configs
+  /configs/{id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: Config id
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      summary: Delete Config
+      tags:
+      - configs
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Config id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SortConfig'
+      summary: Get config
+      tags:
+      - configs
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Config ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update Config
+        in: body
+        name: address
+        required: true
+        schema:
+          $ref: '#/definitions/models.ConfigInputUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SortConfig'
+      summary: Update config
+      tags:
+      - configs
+  /items/:
+    post:
+      parameters:
+      - description: search input
+        in: body
+        name: esSearch
+        required: true
+        schema:
+          $ref: '#/definitions/models.FilterParams'
+      - description: pagination limit
+        in: query
+        name: limit
+        type: string
+      - description: active page
+        in: query
+        name: page
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.PaginatedResponse'
+            - properties:
+                ' count':
+                  type: integer
+                Results:
+                  items:
+                    $ref: '#/definitions/models.ItemOutput'
+                  type: array
+              type: object
+      summary: List Items
+      tags:
+      - items
+swagger: "2.0"
