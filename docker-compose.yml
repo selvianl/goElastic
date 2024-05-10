@@ -25,7 +25,6 @@ services:
     env_file:
       - ./.env
     restart: on-failure
-    # command: sh -c "sleep 20"
 
   db:
     image: postgres:13-alpine

@@ -25,14 +25,40 @@ func (a *API) listItems(c echo.Context) error {
 	if err := c.Bind(&filterParams); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Error parsing filter parameters")
 	}
-	page, limit, err := getPageAndSize(c, 20)
+
+	// Check for field_name and operation are valid ones
+	for _, condition := range filterParams.Conditions {
+		err := condition.CheckFields()
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, err)
+		}
+	}
+
+	page, limit, err := getPageAndSize(c, a.cfg.DefaultPageSize)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	query := elastic.ConstructQuery(filterParams)
-	query["from"] = page
-	query["size"] = limit
+	var sortOption, sortOrder string
+
+	activeConfig, err := a.db.GetActiveConfig()
+	if err != nil {
+		return err
+	}
+
+	if activeConfig != nil {
+		sortOption = activeConfig.SortOption
+		sortOrder = activeConfig.SortOrder
+	}
+
+	// Create query
+	query, err := elastic.ConstructQuery(
+		filterParams, sortOption, sortOrder, page, limit,
+	)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
 
 	// Convert query to byte slice
 	queryBytes, err := json.Marshal(query)
@@ -40,7 +66,7 @@ func (a *API) listItems(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Error parsing filter parameters")
 	}
 
-	searchRes := elastic.DoSearch(context.Background(), queryBytes, a.es)
+	searchRes := a.es.DoSearch(context.Background(), queryBytes)
 
 	// Print the search results
 	fmt.Println("Total hits:", searchRes.Hits.Total.Value)

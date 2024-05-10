@@ -4,11 +4,11 @@ import (
 	"context"
 	"insider/config"
 	"insider/database"
+	"insider/elastic"
 	"net/http"
 	"sync"
 	"time"
 
-	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -20,10 +20,10 @@ type API struct {
 	cfg *config.Config
 	val *validator.Validate
 	db  *database.Database
-	es  *elasticsearch.Client
+	es  *elastic.Elastic
 }
 
-func RunAPI(ctx context.Context, wg *sync.WaitGroup, log *zap.Logger, es *elasticsearch.Client, db *database.Database, cfg *config.Config, addr string) {
+func RunAPI(ctx context.Context, wg *sync.WaitGroup, log *zap.Logger, es *elastic.Elastic, db *database.Database, cfg *config.Config, addr string) {
 	srv := &API{
 		ec:  echo.New(),
 		ctx: ctx,

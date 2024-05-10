@@ -43,7 +43,6 @@ func New(ctx context.Context, log *zap.Logger, cfg *config.Config) (*Database, e
 
 func (d *Database) migrate() error {
 	m := []interface{}{
-		&models.ItemOutput{},
 		&models.SortConfig{},
 	}
 

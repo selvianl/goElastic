@@ -6,11 +6,12 @@ import (
 )
 
 type Config struct {
-	Database   string `env:"DATABASE,notEmpty"`
-	ElasticUrl string `env:"ELASTIC_URL,notEmpty"`
-	IndexName  string `env:"INDEX_NAME,notEmpty"`
-	FilePath   string `env:"FILE_PATH,notEmpty"`
-	Log        LogConfig
+	Database        string `env:"DATABASE,notEmpty"`
+	ElasticUrl      string `env:"ELASTIC_URL,notEmpty"`
+	IndexName       string `env:"INDEX_NAME,notEmpty"`
+	FilePath        string `env:"FILE_PATH,notEmpty"`
+	DefaultPageSize int64  `env:"DEFAULT_PAGE_SIZE,notEmpty"`
+	Log             LogConfig
 }
 
 type LogConfig struct {

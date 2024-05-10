@@ -14,7 +14,11 @@ import (
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 )
 
-func New(indexName, filePath, elasticUrl string) (*elasticsearch.Client, error) {
+type Elastic struct {
+	*elasticsearch.Client
+}
+
+func New(indexName, filePath, elasticUrl string) (*Elastic, error) {
 	es, err := elasticsearch.NewClient(elasticsearch.Config{
 		Addresses: []string{elasticUrl},
 	})
@@ -27,15 +31,17 @@ func New(indexName, filePath, elasticUrl string) (*elasticsearch.Client, error) 
 		return nil, fmt.Errorf("failed to checking index: %w", err)
 	}
 
+	e := &Elastic{es}
+
 	if resp.StatusCode == 404 {
-		IndexFromFile(es, indexName, filePath)
+		e.IndexFromFile(indexName, filePath)
 	}
 
-	return es, nil
+	return &Elastic{es}, nil
 }
 
 // CreateIndex creates an index in Elasticsearch
-func CreateIndex(es *elasticsearch.Client, indexName string) error {
+func (es *Elastic) CreateIndex(indexName string) error {
 	res, err := es.Indices.Create(indexName)
 	if err != nil {
 		return fmt.Errorf("failed to create index: %w", err)
@@ -51,7 +57,7 @@ func CreateIndex(es *elasticsearch.Client, indexName string) error {
 }
 
 // BulkIndex bulk indexes documents into Elasticsearch
-func BulkIndex(es *elasticsearch.Client, indexName string, items []map[string]interface{}) error {
+func (es *Elastic) BulkIndex(indexName string, items []map[string]interface{}) error {
 	var buf bytes.Buffer
 	for _, item := range items {
 		meta := []byte(fmt.Sprintf(`{ "index" : { "_index" : "%s" }}`, indexName))
@@ -82,7 +88,7 @@ func BulkIndex(es *elasticsearch.Client, indexName string, items []map[string]in
 }
 
 // IndexFromFile indexes documents from a JSON file into Elasticsearch
-func IndexFromFile(es *elasticsearch.Client, indexName string, filePath string) error {
+func (es *Elastic) IndexFromFile(indexName string, filePath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to open file: %w", err)
@@ -97,13 +103,13 @@ func IndexFromFile(es *elasticsearch.Client, indexName string, filePath string) 
 	}
 
 	// Create the index
-	err = CreateIndex(es, indexName)
+	err = es.CreateIndex(indexName)
 	if err != nil {
 		return fmt.Errorf("failed to create index: %w", err)
 	}
 
 	// Bulk index the documents
-	err = BulkIndex(es, indexName, items)
+	err = es.BulkIndex(indexName, items)
 	if err != nil {
 		return fmt.Errorf("failed to bulk index documents: %w", err)
 	}
@@ -111,50 +117,57 @@ func IndexFromFile(es *elasticsearch.Client, indexName string, filePath string) 
 	return nil
 }
 
-func ConstructQuery(filterParams models.FilterParams) map[string]interface{} {
+func ConstructQuery(filterParams models.FilterParams, sortOption, sortOrder string, page, size int64) (map[string]interface{}, error) {
 	query := make(map[string]interface{})
 	boolQuery := make(map[string]interface{})
 	boolQuery["must"] = []interface{}{}
 
 	for _, condition := range filterParams.Conditions {
+		fieldName := models.GetFieldEnumValue(condition.FieldName)
+
 		switch condition.Operation {
-		case "equals":
+		case models.Equals:
 			matchQuery := map[string]interface{}{
 				"match": map[string]interface{}{
-					condition.FieldName: condition.Value,
+					fieldName: condition.Value,
 				},
 			}
 			boolQuery["must"] = append(boolQuery["must"].([]interface{}), matchQuery)
-		case "less_than":
+		case models.Lt:
 			numericValue, err := strconv.Atoi(condition.Value)
 			if err != nil {
-				log.Printf("Error converting value to integer: %s", err)
-				continue
+				return nil, fmt.Errorf("error converting value to integer: %v", err)
 			}
 			rangeQuery := map[string]interface{}{
 				"range": map[string]interface{}{
-					condition.FieldName: map[string]interface{}{
+					fieldName: map[string]interface{}{
 						"lt": numericValue,
 					},
 				},
 			}
 			boolQuery["must"] = append(boolQuery["must"].([]interface{}), rangeQuery)
-		case "greater_than":
+		case models.Gt:
 			numericValue, err := strconv.Atoi(condition.Value)
 			if err != nil {
-				log.Printf("Error converting value to integer: %s", err)
-				continue
+				return nil, fmt.Errorf("error converting value to integer: %v", err)
 			}
 			rangeQuery := map[string]interface{}{
 				"range": map[string]interface{}{
-					condition.FieldName: map[string]interface{}{
+					fieldName: map[string]interface{}{
 						"gt": numericValue,
 					},
 				},
 			}
 			boolQuery["must"] = append(boolQuery["must"].([]interface{}), rangeQuery)
+		case models.Query:
+			matchQuery := map[string]interface{}{
+				"wildcard": map[string]interface{}{
+					fieldName: fmt.Sprintf("*%s*", condition.Value),
+				},
+			}
+			boolQuery["must"] = append(boolQuery["must"].([]interface{}), matchQuery)
 		default:
-			log.Printf("Unsupported operation: %s", condition.Operation)
+			return nil, fmt.Errorf("unsupported operation: %s", condition.Operation)
 		}
 	}
 
@@ -162,10 +175,21 @@ func ConstructQuery(filterParams models.FilterParams) map[string]interface{} {
 		"bool": boolQuery,
 	}
 
-	return query
+	// Add sorting
+	if sortOption != "" && sortOrder != "" {
+		sort := map[string]interface{}{
+			sortOption: map[string]interface{}{"order": sortOrder},
+		}
+		query["sort"] = sort
+	}
+
+	query["from"] = page
+	query["size"] = size
+
+	return query, nil
 }
 
-func DoSearch(ctxBg context.Context, queryBytes []byte, es *elasticsearch.Client) models.SearchResponse {
+func (es *Elastic) DoSearch(ctxBg context.Context, queryBytes []byte) models.SearchResponse {
 	req := esapi.SearchRequest{
 		Index: []string{"insider*"},
 		Body:  bytes.NewBuffer(queryBytes),
