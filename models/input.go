@@ -7,9 +7,9 @@ import (
 )
 
 type ConfigInput struct {
-	SortOption string `json:"sort_option" validate:"required" err:"sort_option is required (click, purchase, name, item_id or locale)"`
-	SortOrder  string `json:"sort_order" validate:"required" err:"sort_order is required (asc or desc)"`
-	IsActive   bool   `json:"is_active" validate:"omitempty" err:"is_active is required (true or false)"`
+	SortOption string `json:"sort_option" validate:"required"`
+	SortOrder  string `json:"sort_order" validate:"required"`
+	IsActive   bool   `json:"is_active" validate:"omitempty"`
 }
 
 type ConfigInputUpdate struct {

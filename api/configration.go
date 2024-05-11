@@ -18,7 +18,7 @@ import (
 //	@Success	201			{object}	models.SortConfig
 //	@Router		/configs [post]
 func (a *API) createConfig(c echo.Context) error {
-	var in models.ConfigInput
+	var in *models.ConfigInput
 	if err := c.Bind(&in); err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func (a *API) createConfig(c echo.Context) error {
 		}
 	}
 
-	conf, err := a.db.CreateConfig(in)
+	conf, err := a.db.CreateConfig(*in)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}

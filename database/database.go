@@ -48,3 +48,26 @@ func (d *Database) migrate() error {
 
 	return d.db.AutoMigrate(m...)
 }
+
+func NewWithConnection(ctx context.Context, conn gorm.Dialector, cfg *config.Config) (*Database, error) {
+	g, err := gorm.Open(conn, &gorm.Config{})
+	if err != nil {
+		return nil, err
+	}
+
+	db := &Database{
+		db:  g,
+		ctx: ctx,
+		cfg: cfg,
+	}
+
+	if err := db.migrate(); err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
+func (d *Database) GetConnection() *gorm.DB {
+	return d.db
+}

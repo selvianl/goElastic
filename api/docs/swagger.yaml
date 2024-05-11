@@ -26,12 +26,24 @@ definitions:
       sort_order:
         type: string
     type: object
+  models.FieldEnum:
+    enum:
+    - name
+    - locale
+    - click
+    - purchase
+    type: string
+    x-enum-varnames:
+    - Name
+    - Locale
+    - Click
+    - Purchase
   models.FilterCondition:
     properties:
       field_name:
-        type: string
+        $ref: '#/definitions/models.FieldEnum'
       operation:
-        type: string
+        $ref: '#/definitions/models.OperationEnum'
       value:
         type: string
     type: object
@@ -55,6 +67,18 @@ definitions:
       purchase:
         type: integer
     type: object
+  models.OperationEnum:
+    enum:
+    - lt
+    - gt
+    - equals
+    - query
+    type: string
+    x-enum-varnames:
+    - Lt
+    - Gt
+    - Equals
+    - Query
   models.SortConfig:
     properties:
       created_at:

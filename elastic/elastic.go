@@ -18,6 +18,10 @@ type Elastic struct {
 	*elasticsearch.Client
 }
 
+type ElasticInterface interface {
+	DoSearch(ctxBg context.Context, queryBytes []byte) models.SearchResponse
+}
+
 func New(indexName, filePath, elasticUrl string) (*Elastic, error) {
 	es, err := elasticsearch.NewClient(elasticsearch.Config{
 		Addresses: []string{elasticUrl},
@@ -97,20 +101,17 @@ func (es *Elastic) IndexFromFile(indexName string, filePath string) error {
 
 	// Decode the JSON file
 	var items []map[string]interface{}
-	err = json.NewDecoder(file).Decode(&items)
-	if err != nil {
+	if err := json.NewDecoder(file).Decode(&items); err != nil {
 		return fmt.Errorf("failed to decode JSON: %w", err)
 	}
 
 	// Create the index
-	err = es.CreateIndex(indexName)
-	if err != nil {
+	if err := es.CreateIndex(indexName); err != nil {
 		return fmt.Errorf("failed to create index: %w", err)
 	}
 
 	// Bulk index the documents
-	err = es.BulkIndex(indexName, items)
-	if err != nil {
+	if err := es.BulkIndex(indexName, items); err != nil {
 		return fmt.Errorf("failed to bulk index documents: %w", err)
 	}
 
@@ -123,7 +124,7 @@ func ConstructQuery(filterParams models.FilterParams, sortOption, sortOrder stri
 	boolQuery["must"] = []interface{}{}
 
 	for _, condition := range filterParams.Conditions {
-		fieldName := models.GetFieldEnumValue(condition.FieldName)
+		fieldName := condition.FieldName.Value()
 
 		switch condition.Operation {
 		case models.Equals:
@@ -183,6 +184,7 @@ func ConstructQuery(filterParams models.FilterParams, sortOption, sortOrder stri
 		query["sort"] = sort
 	}
 
+	// Add pagination
 	query["from"] = page
 	query["size"] = size
 
@@ -208,7 +210,7 @@ func (es *Elastic) DoSearch(ctxBg context.Context, queryBytes []byte) models.Sea
 	}
 
 	// Print the response body
-	fmt.Println("Search results:")
+	log.Println("Search results:")
 	var searchRes models.SearchResponse
 	if err := json.NewDecoder(res.Body).Decode(&searchRes); err != nil {
 		log.Fatalf("Error decoding search response: %s", err)

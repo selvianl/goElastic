@@ -20,10 +20,10 @@ type API struct {
 	cfg *config.Config
 	val *validator.Validate
 	db  *database.Database
-	es  *elastic.Elastic
+	es  elastic.ElasticInterface
 }
 
-func RunAPI(ctx context.Context, wg *sync.WaitGroup, log *zap.Logger, es *elastic.Elastic, db *database.Database, cfg *config.Config, addr string) {
+func RunAPI(ctx context.Context, wg *sync.WaitGroup, log *zap.Logger, es elastic.ElasticInterface, db *database.Database, cfg *config.Config, addr string) {
 	srv := &API{
 		ec:  echo.New(),
 		ctx: ctx,

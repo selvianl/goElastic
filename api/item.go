@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"insider/elastic"
 	"insider/models"
 	"net/http"
@@ -67,10 +66,6 @@ func (a *API) listItems(c echo.Context) error {
 	}
 
 	searchRes := a.es.DoSearch(context.Background(), queryBytes)
-
-	// Print the search results
-	fmt.Println("Total hits:", searchRes.Hits.Total.Value)
-	fmt.Println("Search results:")
 
 	var items []models.ItemOutput
 	for _, hit := range searchRes.Hits.Hits {

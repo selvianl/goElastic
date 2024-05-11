@@ -15,8 +15,8 @@ const (
 	Purchase FieldEnum = "purchase"
 )
 
-func GetFieldEnumValue(field FieldEnum) string {
-	switch field {
+func (f FieldEnum) Value() string {
+	switch f {
 	case Name:
 		return "name"
 	case Locale:

@@ -292,14 +292,29 @@ const docTemplate = `{
                 }
             }
         },
+        "models.FieldEnum": {
+            "type": "string",
+            "enum": [
+                "name",
+                "locale",
+                "click",
+                "purchase"
+            ],
+            "x-enum-varnames": [
+                "Name",
+                "Locale",
+                "Click",
+                "Purchase"
+            ]
+        },
         "models.FilterCondition": {
             "type": "object",
             "properties": {
                 "field_name": {
-                    "type": "string"
+                    "$ref": "#/definitions/models.FieldEnum"
                 },
                 "operation": {
-                    "type": "string"
+                    "$ref": "#/definitions/models.OperationEnum"
                 },
                 "value": {
                     "type": "string"
@@ -336,6 +351,21 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
+        },
+        "models.OperationEnum": {
+            "type": "string",
+            "enum": [
+                "lt",
+                "gt",
+                "equals",
+                "query"
+            ],
+            "x-enum-varnames": [
+                "Lt",
+                "Gt",
+                "Equals",
+                "Query"
+            ]
         },
         "models.SortConfig": {
             "type": "object",
