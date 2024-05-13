@@ -51,8 +51,8 @@ Example Usage:
 ```
 {
   "is_active": true,
-  "sort_option": "string",
-  "sort_order": "string"
+  "sort_option": "click",
+  "sort_order": "asc"
 }
 ```
 
